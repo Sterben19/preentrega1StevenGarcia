@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": 1,
+    "title": "Teclado Mecánico",
+    "description": "Switches Red",
+    "code": "TEC001",
+    "price": 15000,
+    "status": true,
+    "stock": 10,
+    "category": "Periféricos",
+    "thumbnails": []
+  }
+]

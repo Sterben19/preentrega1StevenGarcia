@@ -1,45 +1,44 @@
-const fs = require('fs');
+const fs = require('fs').promises;
+const path = require('path');
 
 class CartManager {
     constructor() {
-        this.path = './data/carts.json';
+        this.path = path.join(__dirname, '../data/carts.json');
         this.carts = [];
         this.loadCarts();
     }
 
-    loadCarts() {
-        if (fs.existsSync(this.path)) {
-            const data = fs.readFileSync(this.path, 'utf-8');
+    async loadCarts() {
+        try {
+            const data = await fs.readFile(this.path, 'utf-8');
             this.carts = JSON.parse(data);
-        } else {
+        } catch (error) {
             this.carts = [];
-            this.saveCarts();
+            await this.saveCarts();
         }
     }
 
-    saveCarts() {
-        fs.writeFileSync(this.path, JSON.stringify(this.carts, null, 2));
+    async saveCarts() {
+        await fs.writeFile(this.path, JSON.stringify(this.carts, null, 2));
     }
 
-    createCart() {
+    async createCart() {
+        await this.loadCarts();
         const newId = this.carts.length ? Math.max(...this.carts.map(c => c.id)) + 1 : 1;
         const newCart = { id: newId, products: [] };
         this.carts.push(newCart);
-        this.saveCarts();
+        await this.saveCarts();
         return newCart;
     }
 
-    getById(id) {
+    async getById(id) {
+        await this.loadCarts();
         return this.carts.find(c => c.id == id);
     }
 
-    getProducts(id) {
-        const cart = this.getById(id);
-        return cart ? cart.products : null;
-    }
-
-    addProductToCart(cartId, productId) {
-        const cart = this.getById(cartId);
+    async addProductToCart(cartId, productId) {
+        await this.loadCarts();
+        const cart = await this.getById(cartId);
         if (!cart) return null;
 
         const productInCart = cart.products.find(p => p.product === productId);
@@ -48,7 +47,7 @@ class CartManager {
         } else {
             cart.products.push({ product: productId, quantity: 1 });
         }
-        this.saveCarts();
+        await this.saveCarts();
         return cart;
     }
 }

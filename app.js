@@ -26,24 +26,15 @@ app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
 app.use('/', viewsRouter);
 
-let products = [];
+app.set('io', io);
 
-io.on('connection', socket => {
-  console.log('Cliente conectado');
-
-  socket.emit('update-products', products);
-
-  socket.on('add-product', product => {
-    products.push(product);
-    io.emit('update-products', products);
-  });
-
-  socket.on('delete-product', productId => {
-    products = products.filter(p => p.id !== productId);
-    io.emit('update-products', products);
-  });
+io.on('connection', async (socket) => {
+    console.log('Cliente conectado');
+    const productManager = new (require('./managers/ProductManager'))();
+    const products = await productManager.getAll();
+    socket.emit('update-products', products);
 });
 
 httpServer.listen(port, () => {
-  console.log(`Servidor ejecutándose en puerto ${port}`);
+    console.log(`Servidor ejecutándose en puerto ${port}`);
 });
