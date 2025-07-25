@@ -1,44 +1,42 @@
-const express = require('express');
-const router = express.Router();
-const ProductManager = require('../managers/ProductManager');
-const productManager = new ProductManager();
+import { Router } from 'express';
+import Product from '../models/Product.js';
+
+const router = Router();
 
 router.get('/', async (req, res) => {
-    const products = await productManager.getAll();
-    res.json(products);
-});
+  try {
+    const { limit = 10, page = 1, sort, query } = req.query;
+    
+    const options = {
+      limit: parseInt(limit),
+      page: parseInt(page),
+      lean: true
+    };
 
-router.get('/:pid', async (req, res) => {
-    const product = await productManager.getById(req.params.pid);
-    if (product) res.json(product);
-    else res.status(404).json({ error: 'Producto no encontrado' });
-});
-
-router.post('/', async (req, res) => {
-    const productData = req.body;
-    const requiredFields = ['title', 'description', 'code', 'price', 'status', 'stock', 'category'];
-    if (!requiredFields.every(field => productData[field] !== undefined)) {
-        return res.status(400).json({ error: 'Faltan campos requeridos' });
+    if (sort) {
+      options.sort = { price: sort === 'asc' ? 1 : -1 };
     }
-    const newProduct = await productManager.addProduct(productData);
-    const io = req.app.get('io');
-    io.emit('new-product', newProduct);
-    res.status(201).json(newProduct);
+
+    const filter = query ? { 
+      $or: [
+        { category: query },
+        { status: query === 'available' }
+      ]
+    } : {};
+
+    const result = await Product.paginate(filter, options);
+
+    res.json({
+      status: 'success',
+      payload: result.docs,
+      totalPages: result.totalPages,
+      page: result.page,
+      hasPrevPage: result.hasPrevPage,
+      hasNextPage: result.hasNextPage
+    });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 });
 
-router.put('/:pid', async (req, res) => {
-    const updatedProduct = await productManager.updateProduct(req.params.pid, req.body);
-    if (updatedProduct) res.json(updatedProduct);
-    else res.status(404).json({ error: 'Producto no encontrado' });
-});
-
-router.delete('/:pid', async (req, res) => {
-    const deleted = await productManager.deleteProduct(req.params.pid);
-    if (deleted) {
-        const io = req.app.get('io');
-        io.emit('delete-product', req.params.pid);
-        res.json(deleted);
-    } else res.status(404).json({ error: 'Producto no encontrado' });
-});
-
-module.exports = router;
+export default router;

@@ -1,0 +1,126 @@
+<h1 class="mb-4">Productos</h1>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <form class="d-flex" action="/" method="get">
+      <input class="form-control me-2" type="search" name="query" placeholder="Buscar..." value="{{query}}">
+      <button class="btn btn-outline-success" type="submit">Buscar</button>
+    </form>
+  </div>
+  <div class="col-md-6 text-end">
+    <div class="dropdown d-inline-block me-2">
+      <button class="btn btn-secondary dropdown-toggle" type="button" id="categoryDropdown" data-bs-toggle="dropdown">
+        {{#if category}}{{category}}{{else}}Categorías{{/if}}
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="/?category=">Todas</a></li>
+        <li><a class="dropdown-item" href="/?category=Electrónica">Electrónica</a></li>
+        <li><a class="dropdown-item" href="/?category=Ropa">Ropa</a></li>
+        <li><a class="dropdown-item" href="/?category=Hogar">Hogar</a></li>
+        <li><a class="dropdown-item" href="/?category=Deportes">Deportes</a></li>
+      </ul>
+    </div>
+    <div class="dropdown d-inline-block">
+      <button class="btn btn-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown">
+        {{#if sort}}{{#if (eq sort "asc")}}Precio: Menor a Mayor{{else}}Precio: Mayor a Menor{{/if}}{{else}}Ordenar{{/if}}
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="/?sort=">Por defecto</a></li>
+        <li><a class="dropdown-item" href="/?sort=asc">Precio: Menor a Mayor</a></li>
+        <li><a class="dropdown-item" href="/?sort=desc">Precio: Mayor a Menor</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  {{#each payload}}
+    <div class="col-md-4 mb-4">
+      <div class="card h-100">
+        {{#if thumbnails.[0]}}
+          <img src="{{thumbnails.[0]}}" class="card-img-top" alt="{{title}}">
+        {{else}}
+          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+            <span class="text-muted">Sin imagen</span>
+          </div>
+        {{/if}}
+        <div class="card-body">
+          <h5 class="card-title">{{title}}</h5>
+          <p class="card-text text-success">${{price}}</p>
+          <p class="card-text"><small class="text-muted">{{category}}</small></p>
+        </div>
+        <div class="card-footer bg-white">
+          <a href="/products/{{_id}}" class="btn btn-primary btn-sm me-2">Ver detalles</a>
+          <button onclick="addToCart('{{_id}}')" class="btn btn-success btn-sm">Agregar al carrito</button>
+        </div>
+      </div>
+    </div>
+  {{else}}
+    <div class="col-12">
+      <div class="alert alert-info">No se encontraron productos</div>
+    </div>
+  {{/each}}
+</div>
+
+{{#if totalPages}}
+<nav aria-label="Page navigation" class="mt-4">
+  <ul class="pagination justify-content-center">
+    <li class="page-item {{#unless hasPrevPage}}disabled{{/unless}}">
+      <a class="page-link" href="{{prevLink}}" aria-label="Previous">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    </li>
+    
+    {{#each (range 1 totalPages)}}
+      <li class="page-item {{#if (eq this ../page)}}active{{/if}}">
+        <a class="page-link" href="{{buildPageLink ../req this}}">{{this}}</a>
+      </li>
+    {{/each}}
+    
+    <li class="page-item {{#unless hasNextPage}}disabled{{/unless}}">
+      <a class="page-link" href="{{nextLink}}" aria-label="Next">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+  </ul>
+</nav>
+{{/if}}
+
+<script>
+  function addToCart(productId) {
+    fetch('/api/carts/{{cartId}}/products/' + productId, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        alert('Producto agregado al carrito');
+      } else {
+        response.json().then(data => {
+          alert('Error: ' + data.message);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error al agregar al carrito');
+    });
+  }
+
+  function buildPageLink(req, page) {
+    const { query, category, sort, limit } = req.query;
+    const params = new URLSearchParams();
+    if (query) params.append('query', query);
+    if (category) params.append('category', category);
+    if (sort) params.append('sort', sort);
+    if (limit) params.append('limit', limit);
+    params.append('page', page);
+    return `/?${params.toString()}`;
+  }
+
+  function range(start, end) {
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }
+</script>

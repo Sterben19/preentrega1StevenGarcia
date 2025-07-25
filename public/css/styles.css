@@ -1,0 +1,60 @@
+/* Estilos generales */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+/* Navbar */
+.navbar {
+  box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+/* Productos */
+.product-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,.1);
+}
+
+.product-img {
+  height: 200px;
+  object-fit: contain;
+  background-color: #f8f9fa;
+}
+
+/* Carrito */
+.cart-item-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Detalle de producto */
+.product-detail-img {
+  max-height: 500px;
+  object-fit: contain;
+}
+
+/* Paginación */
+.pagination {
+  margin-top: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-detail {
+    flex-direction: column;
+  }
+  
+  .product-detail-img {
+    margin-bottom: 1.5rem;
+  }
+}

@@ -1,0 +1,157 @@
+<div class="cart-detail">
+  <h1 class="mb-4">Carrito #{{_id}}</h1>
+  
+  {{#if products.length}}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each products}}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  {{#if product.thumbnails.[0]}}
+                    <img src="{{product.thumbnails.[0]}}" alt="{{product.title}}" width="50" class="me-3">
+                  {{/if}}
+                  <div>
+                    <h6 class="mb-0">{{product.title}}</h6>
+                    <small class="text-muted">{{product.category}}</small>
+                  </div>
+                </div>
+              </td>
+              <td>${{product.price}}</td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <button class="btn btn-sm btn-outline-secondary" 
+                    onclick="updateQuantity('{{../_id}}', '{{product._id}}', {{subtract quantity 1}})">
+                    -
+                  </button>
+                  <span class="mx-2">{{quantity}}</span>
+                  <button class="btn btn-sm btn-outline-secondary" 
+                    onclick="updateQuantity('{{../_id}}', '{{product._id}}', {{add quantity 1}})">
+                    +
+                  </button>
+                </div>
+              </td>
+              <td>${{multiply product.price quantity}}</td>
+              <td>
+                <button class="btn btn-sm btn-danger" 
+                  onclick="removeFromCart('{{../_id}}', '{{product._id}}')">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="text-end"><strong>Total:</strong></td>
+            <td><strong>${{total}}</strong></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    
+    <div class="d-flex justify-content-between mt-4">
+      <a href="/" class="btn btn-outline-primary">Seguir comprando</a>
+      <button class="btn btn-danger" onclick="clearCart('{{_id}}')">Vaciar carrito</button>
+    </div>
+  {{else}}
+    <div class="alert alert-info">
+      El carrito está vacío. <a href="/">Ver productos</a>
+    </div>
+  {{/if}}
+</div>
+
+<script>
+  function updateQuantity(cartId, productId, newQuantity) {
+    if (newQuantity <= 0) {
+      removeFromCart(cartId, productId);
+      return;
+    }
+    
+    fetch(`/api/carts/${cartId}/products/${productId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ quantity: newQuantity })
+    })
+    .then(response => {
+      if (response.ok) {
+        location.reload();
+      } else {
+        response.json().then(data => {
+          alert('Error: ' + data.message);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error al actualizar cantidad');
+    });
+  }
+
+  function removeFromCart(cartId, productId) {
+    if (!confirm('¿Eliminar producto del carrito?')) return;
+    
+    fetch(`/api/carts/${cartId}/products/${productId}`, {
+      method: 'DELETE'
+    })
+    .then(response => {
+      if (response.ok) {
+        location.reload();
+      } else {
+        response.json().then(data => {
+          alert('Error: ' + data.message);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error al eliminar producto');
+    });
+  }
+
+  function clearCart(cartId) {
+    if (!confirm('¿Vaciar todo el carrito?')) return;
+    
+    fetch(`/api/carts/${cartId}`, {
+      method: 'DELETE'
+    })
+    .then(response => {
+      if (response.ok) {
+        location.reload();
+      } else {
+        response.json().then(data => {
+          alert('Error: ' + data.message);
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error al vaciar carrito');
+    });
+  }
+
+  function multiply(a, b) {
+    return a * b;
+  }
+
+  function add(a, b) {
+    return a + b;
+  }
+
+  function subtract(a, b) {
+    return a - b;
+  }
+</script>

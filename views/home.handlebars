@@ -1,6 +1,24 @@
-<h1>Lista de productos (estática)</h1>
-<ul>
-  {{#each products}}
-    <li>{{this.title}} - ${{this.price}}</li>
+
+{{!< layouts/main}}
+
+<h1>Productos</h1>
+<div class="products">
+  {{#each payload}}
+    <div class="product-card">
+      <h3>{{this.title}}</h3>
+      <p>${{this.price}}</p>
+      <a href="/products/{{this._id}}">Ver detalles</a>
+      <button onclick="addToCart('{{this._id}}')">Agregar al carrito</button>
+    </div>
   {{/each}}
-</ul>
+</div>
+
+
+<div class="pagination">
+  {{#if hasPrevPage}}
+    <a href="{{prevLink}}">⬅ Anterior</a>
+  {{/if}}
+  {{#if hasNextPage}}
+    <a href="{{nextLink}}">Siguiente ➡</a>
+  {{/if}}
+</div>

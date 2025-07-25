@@ -1,17 +1,38 @@
 {
-  "name": "backend1",
+  "name": "ecommerce-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "API para ecommerce con MongoDB y Handlebars",
+  "main": "app.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0",
-    "express-handlebars": "^8.0.3",
-    "socket.io": "^4.8.1"
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-handlebars": "^7.1.2",
+    "mongodb": "^6.18.0",
+    "mongoose": "^7.8.7",
+    "mongoose-paginate-v2": "^1.9.1",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {},
+    "extensionsToTreatAsEsm": [
+      ".js"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
   }
 }
