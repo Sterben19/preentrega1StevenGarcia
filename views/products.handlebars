@@ -1,126 +1,166 @@
-<h1 class="mb-4">Productos</h1>
-
-<div class="row mb-4">
-  <div class="col-md-6">
-    <form class="d-flex" action="/" method="get">
-      <input class="form-control me-2" type="search" name="query" placeholder="Buscar..." value="{{query}}">
-      <button class="btn btn-outline-success" type="submit">Buscar</button>
-    </form>
-  </div>
-  <div class="col-md-6 text-end">
-    <div class="dropdown d-inline-block me-2">
-      <button class="btn btn-secondary dropdown-toggle" type="button" id="categoryDropdown" data-bs-toggle="dropdown">
-        {{#if category}}{{category}}{{else}}Categorías{{/if}}
-      </button>
-      <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="/?category=">Todas</a></li>
-        <li><a class="dropdown-item" href="/?category=Electrónica">Electrónica</a></li>
-        <li><a class="dropdown-item" href="/?category=Ropa">Ropa</a></li>
-        <li><a class="dropdown-item" href="/?category=Hogar">Hogar</a></li>
-        <li><a class="dropdown-item" href="/?category=Deportes">Deportes</a></li>
-      </ul>
-    </div>
-    <div class="dropdown d-inline-block">
-      <button class="btn btn-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown">
-        {{#if sort}}{{#if (eq sort "asc")}}Precio: Menor a Mayor{{else}}Precio: Mayor a Menor{{/if}}{{else}}Ordenar{{/if}}
-      </button>
-      <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="/?sort=">Por defecto</a></li>
-        <li><a class="dropdown-item" href="/?sort=asc">Precio: Menor a Mayor</a></li>
-        <li><a class="dropdown-item" href="/?sort=desc">Precio: Mayor a Menor</a></li>
-      </ul>
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Nuestros Productos</h1>
+    <div>
+      <a href="/carts/{{cartId}}" class="btn btn-primary position-relative">
+        <i class="fas fa-shopping-cart me-1"></i>
+        Carrito
+        <span id="cart-counter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          0
+        </span>
+      </a>
     </div>
   </div>
-</div>
 
-<div class="row">
-  {{#each payload}}
-    <div class="col-md-4 mb-4">
-      <div class="card h-100">
-        {{#if thumbnails.[0]}}
-          <img src="{{thumbnails.[0]}}" class="card-img-top" alt="{{title}}">
-        {{else}}
-          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-            <span class="text-muted">Sin imagen</span>
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <form id="filter-form" class="row g-3">
+        <div class="col-md-5">
+          <input type="text" name="query" class="form-control" 
+                 placeholder="Buscar por nombre, categoría o descripción..." 
+                 value="{{currentQuery}}">
+        </div>
+        <div class="col-md-3">
+          <select name="category" class="form-select">
+            <option value="">Todas las categorías</option>
+            {{#each categories}}
+              <option value="{{this}}" {{#if (eq this ../currentCategory)}}selected{{/if}}>
+                {{this}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select name="sort" class="form-select">
+            <option value="">Ordenar por</option>
+            <option value="asc" {{#if (eq currentSort 'asc')}}selected{{/if}}>Precio: Menor a Mayor</option>
+            <option value="desc" {{#if (eq currentSort 'desc')}}selected{{/if}}>Precio: Mayor a Menor</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-filter me-1"></i> Filtrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {{#if payload.length}}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+      {{#each payload}}
+        <div class="col">
+          <div class="card h-100 shadow-sm product-card">
+            <div class="position-relative">
+              {{#if thumbnails.[0]}}
+                <img src="{{thumbnails.[0]}}" class="card-img-top product-img" alt="{{title}}">
+              {{else}}
+                <div class="card-img-top product-img-placeholder d-flex align-items-center justify-content-center">
+                  <i class="fas fa-box-open fa-3x text-muted"></i>
+                </div>
+              {{/if}}
+              <div class="position-absolute top-0 end-0 m-2">
+                <span class="badge bg-{{#if (gt stock 0)}}success{{else}}danger{{/if}}">
+                  {{#if (gt stock 0)}}
+                    {{stock}} en stock
+                  {{else}}
+                    Agotado
+                  {{/if}}
+                </span>
+              </div>
+            </div>
+            
+            <div class="card-body">
+              <h5 class="card-title">{{title}}</h5>
+              <div class="mb-2">
+                <span class="badge bg-secondary">{{category}}</span>
+              </div>
+              <p class="card-text text-truncate-3">{{description}}</p>
+              <h5 class="text-primary">${{formatPrice price}}</h5>
+            </div>
+            
+            <div class="card-footer bg-white d-flex gap-2">
+              <a href="/products/{{_id}}" class="btn btn-outline-primary flex-grow-1">
+                <i class="fas fa-eye me-1"></i> Detalles
+              </a>
+              <button class="btn btn-success flex-grow-1 add-to-cart-btn" 
+                      data-product-id="{{_id}}"
+                      {{#unless stock}}disabled{{/unless}}>
+                <i class="fas fa-cart-plus me-1"></i> Agregar
+              </button>
+            </div>
           </div>
-        {{/if}}
-        <div class="card-body">
-          <h5 class="card-title">{{title}}</h5>
-          <p class="card-text text-success">${{price}}</p>
-          <p class="card-text"><small class="text-muted">{{category}}</small></p>
         </div>
-        <div class="card-footer bg-white">
-          <a href="/products/{{_id}}" class="btn btn-primary btn-sm me-2">Ver detalles</a>
-          <button onclick="addToCart('{{_id}}')" class="btn btn-success btn-sm">Agregar al carrito</button>
-        </div>
-      </div>
+      {{/each}}
     </div>
-  {{else}}
-    <div class="col-12">
-      <div class="alert alert-info">No se encontraron productos</div>
-    </div>
-  {{/each}}
-</div>
 
-{{#if totalPages}}
-<nav aria-label="Page navigation" class="mt-4">
-  <ul class="pagination justify-content-center">
-    <li class="page-item {{#unless hasPrevPage}}disabled{{/unless}}">
-      <a class="page-link" href="{{prevLink}}" aria-label="Previous">
-        <span aria-hidden="true">&laquo;</span>
+    {{#if (gt totalPages 1)}}
+      <nav aria-label="Paginación" class="mt-5">
+        <ul class="pagination justify-content-center">
+          <li class="page-item {{#unless hasPrevPage}}disabled{{/unless}}">
+            <a class="page-link" href="{{prevLink}}" aria-label="Anterior">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          
+          {{#each (range 1 totalPages)}}
+            <li class="page-item {{#if (eq this ../page)}}active{{/if}}">
+              <a class="page-link" href="/products?page={{this}}&limit={{../limit}}&sort={{../sort}}&query={{../query}}">
+                {{this}}
+              </a>
+            </li>
+          {{/each}}
+
+          <li class="page-item {{#unless hasNextPage}}disabled{{/unless}}">
+            <a class="page-link" href="{{nextLink}}" aria-label="Siguiente">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    {{/if}}
+  {{else}}
+    <div class="text-center py-5">
+      <i class="fas fa-search fa-4x text-muted mb-4"></i>
+      <h3 class="mb-3">No se encontraron productos</h3>
+      <p class="text-muted mb-4">Intenta con otros filtros de búsqueda</p>
+      <a href="/products" class="btn btn-outline-primary">
+        <i class="fas fa-sync-alt me-2"></i> Reiniciar filtros
       </a>
-    </li>
-    
-    {{#each (range 1 totalPages)}}
-      <li class="page-item {{#if (eq this ../page)}}active{{/if}}">
-        <a class="page-link" href="{{buildPageLink ../req this}}">{{this}}</a>
-      </li>
-    {{/each}}
-    
-    <li class="page-item {{#unless hasNextPage}}disabled{{/unless}}">
-      <a class="page-link" href="{{nextLink}}" aria-label="Next">
-        <span aria-hidden="true">&raquo;</span>
-      </a>
-    </li>
-  </ul>
-</nav>
-{{/if}}
+    </div>
+  {{/if}}
+</div>
 
 <script>
-  function addToCart(productId) {
-    fetch('/api/carts/{{cartId}}/products/' + productId, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => {
-      if (response.ok) {
-        alert('Producto agregado al carrito');
-      } else {
-        response.json().then(data => {
-          alert('Error: ' + data.message);
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Error al agregar al carrito');
-    });
-  }
 
-  function buildPageLink(req, page) {
-    const { query, category, sort, limit } = req.query;
+  document.addEventListener('DOMContentLoaded', async () => {
+    const cartId = '{{cartId}}';
+    if (cartId) {
+      try {
+        const response = await fetch(`/api/carts/${cartId}`);
+        if (response.ok) {
+          const cart = await response.json();
+          const counter = document.getElementById('cart-counter');
+          if (counter) {
+            const totalItems = cart.payload.products.reduce((sum, item) => sum + item.quantity, 0);
+            counter.textContent = totalItems;
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar carrito:', error);
+      }
+    }
+  });
+
+  document.getElementById('filter-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
     const params = new URLSearchParams();
-    if (query) params.append('query', query);
-    if (category) params.append('category', category);
-    if (sort) params.append('sort', sort);
-    if (limit) params.append('limit', limit);
-    params.append('page', page);
-    return `/?${params.toString()}`;
-  }
-
-  function range(start, end) {
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  }
+    
+    formData.forEach((value, key) => {
+      if (value) params.append(key, value);
+    });
+    
+    window.location.href = `/products?${params.toString()}`;
+  });
 </script>

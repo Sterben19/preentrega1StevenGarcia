@@ -1,24 +1,91 @@
+<div class="container py-4">
+  <h1 class="text-center mb-4">Productos Destacados</h1>
 
-{{!< layouts/main}}
-
-<h1>Productos</h1>
-<div class="products">
-  {{#each payload}}
-    <div class="product-card">
-      <h3>{{this.title}}</h3>
-      <p>${{this.price}}</p>
-      <a href="/products/{{this._id}}">Ver detalles</a>
-      <button onclick="addToCart('{{this._id}}')">Agregar al carrito</button>
+  {{#if products}}
+    {{#if products.length}}
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        {{#each products}}
+          <div class="col">
+            <div class="card h-100 shadow">
+              {{#if thumbnails.[0]}}
+                <img src="{{thumbnails.[0]}}" class="card-img-top p-2" alt="{{title}}" style="height: 200px; object-fit: contain;">
+              {{else}}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                  <i class="fas fa-box-open fa-3x text-muted"></i>
+                </div>
+              {{/if}}
+              
+              <div class="card-body">
+                <h5 class="card-title">{{title}}</h5>
+                <p class="text-success fw-bold">{{formatPrice price}}</p>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  <span class="badge bg-primary">{{category}}</span>
+                  {{#if (gt stock 0)}}
+                    <span class="badge bg-success">Disponible</span>
+                  {{else}}
+                    <span class="badge bg-danger">Agotado</span>
+                  {{/if}}
+                </div>
+              </div>
+              
+              <div class="card-footer bg-white">
+                <button onclick="addToCart('{{_id}}', '{{../cartId}}')" 
+                  class="btn btn-success w-100" {{#unless stock}}disabled{{/unless}}>
+                  <i class="fas fa-cart-plus me-1"></i> Agregar
+                </button>
+              </div>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="alert alert-info text-center py-4">
+        <i class="fas fa-info-circle fa-3x mb-3"></i>
+        <h3>No hay productos disponibles</h3>
+        <a href="/products" class="btn btn-outline-primary mt-3">Ver todos los productos</a>
+      </div>
+    {{/if}}
+  {{else}}
+    <div class="alert alert-warning text-center py-4">
+      <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+      <h3>Error al cargar productos</h3>
+      <button onclick="window.location.reload()" class="btn btn-outline-primary mt-3">
+        Recargar página
+      </button>
     </div>
-  {{/each}}
-</div>
-
-
-<div class="pagination">
-  {{#if hasPrevPage}}
-    <a href="{{prevLink}}">⬅ Anterior</a>
-  {{/if}}
-  {{#if hasNextPage}}
-    <a href="{{nextLink}}">Siguiente ➡</a>
   {{/if}}
 </div>
+
+<script>
+  async function addToCart(productId, cartId) {
+    const btn = event.target;
+    try {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Procesando...';
+
+      const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al agregar al carrito');
+      }
+
+
+      const counter = document.getElementById('cart-counter');
+      if (counter) {
+        counter.textContent = parseInt(counter.textContent) + 1;
+      }
+
+      showAlert('Producto agregado al carrito', 'success');
+      
+    } catch (error) {
+      console.error('Error:', error);
+      showAlert(error.message, 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-cart-plus me-1"></i> Agregar';
+    }
+  }
+</script>

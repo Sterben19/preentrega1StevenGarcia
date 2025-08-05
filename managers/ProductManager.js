@@ -1,68 +1,57 @@
-const fs = require('fs').promises;
-const path = require('path');
+import Product from '../models/Product.js';
 
 class ProductManager {
-    constructor() {
-        this.path = path.join(__dirname, '../data/products.json');
-        this.products = [];
-        this.loadProducts();
+  async getProducts(filter = {}, options = {}) {
+    try {
+      return await Product.paginate(filter, options);
+    } catch (error) {
+      throw error;
     }
+  }
 
-    async loadProducts() {
-        try {
-            const data = await fs.readFile(this.path, 'utf-8');
-            this.products = JSON.parse(data);
-        } catch (error) {
-            this.products = [];
-            await this.saveProducts();
-        }
+  async getProductById(id) {
+    try {
+      const product = await Product.findById(id);
+      if (!product) throw new Error('Product not found');
+      return product;
+    } catch (error) {
+      throw error;
     }
+  }
 
-    async saveProducts() {
-        await fs.writeFile(this.path, JSON.stringify(this.products, null, 2));
+  async addProduct(productData) {
+    try {
+      const newProduct = new Product(productData);
+      await newProduct.save();
+      return newProduct;
+    } catch (error) {
+      throw error;
     }
+  }
 
-    async getAll() {
-        await this.loadProducts();
-        return this.products;
+  async updateProduct(id, updateData) {
+    try {
+      const updatedProduct = await Product.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true }
+      );
+      if (!updatedProduct) throw new Error('Product not found');
+      return updatedProduct;
+    } catch (error) {
+      throw error;
     }
+  }
 
-    async getById(id) {
-        await this.loadProducts();
-        return this.products.find(p => p.id == id);
+  async deleteProduct(id) {
+    try {
+      const deletedProduct = await Product.findByIdAndDelete(id);
+      if (!deletedProduct) throw new Error('Product not found');
+      return deletedProduct;
+    } catch (error) {
+      throw error;
     }
-
-    async addProduct(productData) {
-        await this.loadProducts();
-        const newId = this.products.length ? Math.max(...this.products.map(p => p.id)) + 1 : 1;
-        const newProduct = { id: newId, ...productData };
-        this.products.push(newProduct);
-        await this.saveProducts();
-        return newProduct;
-    }
-
-    async updateProduct(id, data) {
-        await this.loadProducts();
-        const index = this.products.findIndex(p => p.id == id);
-        if (index !== -1) {
-            const { id: _, ...fieldsToUpdate } = data;
-            this.products[index] = { ...this.products[index], ...fieldsToUpdate };
-            await this.saveProducts();
-            return this.products[index];
-        }
-        return null;
-    }
-
-    async deleteProduct(id) {
-        await this.loadProducts();
-        const index = this.products.findIndex(p => p.id == id);
-        if (index !== -1) {
-            const deleted = this.products.splice(index, 1);
-            await this.saveProducts();
-            return deleted;
-        }
-        return null;
-    }
+  }
 }
 
-module.exports = ProductManager;
+export default ProductManager;
