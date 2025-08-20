@@ -1,0 +1,53 @@
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #eee;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.card-img-top {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #eee;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+
+.badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+
+.alert {
+  border-radius: 8px;
+}
+
+
+@media (max-width: 768px) {
+  .card-title {
+    font-size: 1rem;
+  }
+}

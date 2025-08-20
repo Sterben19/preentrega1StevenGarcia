@@ -1,53 +1,67 @@
-const express = require('express');
-const Product = require('../models/Product');
-const Cart = require('../models/Cart');
+import express from 'express';
+import Product from '../models/Product.js';
+import Cart from '../models/Cart.js';
 
 const router = express.Router();
 
-
 const buildPaginationLinks = (req, result) => {
-  const { limit, page, sort, query } = req.query;
-  const baseUrl = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
-  
+  const { limit, sort, query, category } = req.query;
+  const basePath = '/products';
+
+  const makeLink = (page) =>
+    `${basePath}?limit=${limit || 6}&page=${page}&sort=${sort || ''}&query=${query || ''}&category=${category || ''}`;
+
   return {
-    prevLink: result.hasPrevPage ? 
-      `${baseUrl}?${new URLSearchParams({ limit, page: result.prevPage, sort, query }).toString()}` : null,
-    nextLink: result.hasNextPage ? 
-      `${baseUrl}?${new URLSearchParams({ limit, page: result.nextPage, sort, query }).toString()}` : null
+    prevLink: result.hasPrevPage ? makeLink(result.prevPage) : null,
+    nextLink: result.hasNextPage ? makeLink(result.nextPage) : null
   };
 };
 
-
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find({ status: true })
-      .sort({ createdAt: -1 })
-      .limit(4)
-      .lean();
+    const result = await Product.paginate(
+      { status: true },
+      {
+        limit: 4,
+        page: req.query.page || 1,
+        sort: { createdAt: -1 },
+        lean: true
+      }
+    );
+
+    const safeProducts = result.docs.map(p => ({
+      ...p,
+      thumbnails: p.thumbnails?.length ? p.thumbnails : ['/img/default-product.png']
+    }));
 
     res.render('home', {
       title: 'Inicio',
-      products,
-      cartId: req.app.get('defaultCartId'),
+      products: safeProducts,
+      pagination: {
+        hasPrevPage: result.hasPrevPage,
+        hasNextPage: result.hasNextPage,
+        prevLink: result.hasPrevPage ? `/?page=${result.prevPage}` : null,
+        nextLink: result.hasNextPage ? `/?page=${result.nextPage}` : null
+      },
+      cartId: req.app.get('defaultCartId') || req.app.locals.cartId,
       style: 'home.css'
     });
   } catch (error) {
-    console.error('Error en ruta /:', error);
+    console.error('Error loading home:', error);
     res.status(500).render('error', {
       title: 'Error',
-      message: 'Error al cargar la página de inicio',
-      style: 'error.css'
+      message: 'Error al cargar productos destacados'
     });
   }
 });
 
-
 router.get('/products', async (req, res) => {
   try {
-    const { limit = 6, page = 1, sort, query } = req.query;
+    const { limit = 6, page = 1, sort, query, category } = req.query;
+
     const options = {
-      limit: parseInt(limit),
-      page: parseInt(page),
+      limit: parseInt(limit, 10),
+      page: parseInt(page, 10),
       lean: true,
       sort: sort ? { price: sort === 'asc' ? 1 : -1 } : undefined
     };
@@ -59,32 +73,44 @@ router.get('/products', async (req, res) => {
         { description: { $regex: query, $options: 'i' } }
       ];
     }
+    if (category) {
+      filter.category = category;
+    }
 
     const result = await Product.paginate(filter, options);
-    const { prevLink, nextLink } = buildPaginationLinks(req, result);
+    const categories = await Product.distinct('category');
+    const links = buildPaginationLinks(req, result);
 
     res.render('products', {
       title: 'Productos',
-      products: result.docs,
+      payload: result.docs,
       totalPages: result.totalPages,
-      currentPage: result.page,
+      prevPage: result.prevPage,
+      nextPage: result.nextPage,
+      page: result.page,
       hasPrevPage: result.hasPrevPage,
       hasNextPage: result.hasNextPage,
-      prevLink,
-      nextLink,
-      cartId: req.app.get('defaultCartId'),
+      prevLink: links.prevLink,
+      nextLink: links.nextLink,
+      limit,
+      sort,
+      query,
+      currentCategory: category || '',
+      currentQuery: query || '',
+      currentSort: sort || '',
+      categories,
+      cartId: req.app.get('defaultCartId') || req.app.locals.cartId, 
       style: 'products.css'
     });
+
   } catch (error) {
     console.error('Error en /products:', error);
     res.status(500).render('error', {
       title: 'Error',
-      message: 'Error al cargar los productos',
-      style: 'error.css'
+      message: 'Error al cargar productos'
     });
   }
 });
-
 
 router.get('/products/:pid', async (req, res) => {
   try {
@@ -92,7 +118,7 @@ router.get('/products/:pid', async (req, res) => {
     if (!product) {
       return res.status(404).render('error', {
         title: 'No encontrado',
-        message: 'Producto no existe',
+        message: 'El producto solicitado no existe',
         style: 'error.css'
       });
     }
@@ -100,7 +126,7 @@ router.get('/products/:pid', async (req, res) => {
     res.render('productDetail', {
       title: product.title,
       product,
-      cartId: req.app.get('defaultCartId'),
+      cartId: req.app.get('defaultCartId') || req.app.locals.cartId,
       style: 'detail.css'
     });
   } catch (error) {
@@ -112,7 +138,6 @@ router.get('/products/:pid', async (req, res) => {
     });
   }
 });
-
 
 router.get('/carts/:cid', async (req, res) => {
   try {
@@ -130,10 +155,10 @@ router.get('/carts/:cid', async (req, res) => {
 
     const enhancedCart = {
       ...cart,
-      total: cart.products.reduce((sum, item) => sum + (item.product.price * item.quantity), 0),
+      total: cart.products.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0),
       products: cart.products.map(item => ({
         ...item,
-        subtotal: item.product.price * item.quantity
+        subtotal: (item.product?.price || 0) * item.quantity
       }))
     };
 
@@ -152,4 +177,4 @@ router.get('/carts/:cid', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

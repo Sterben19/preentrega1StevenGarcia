@@ -3,17 +3,19 @@
     <div class="col-md-6">
       <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner">
-          {{#each product.thumbnails}}
-            <div class="carousel-item {{#if @first}}active{{/if}}">
-              <img src="{{this}}" class="d-block w-100" alt="{{../product.title}}">
-            </div>
+          {{#if product.thumbnails}}
+            {{#each product.thumbnails}}
+              <div class="carousel-item {{#if @first}}active{{/if}}">
+                <img src="{{this}}" class="d-block w-100" alt="{{../product.title}}" style="max-height: 400px; object-fit: contain;">
+              </div>
+            {{/each}}
           {{else}}
             <div class="carousel-item active">
-              <div class="d-block w-100 bg-light" style="height: 400px; display: flex; align-items: center; justify-content: center;">
+              <div class="d-block w-100 bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
                 <span class="text-muted">No hay imágenes disponibles</span>
               </div>
             </div>
-          {{/each}}
+          {{/if}}
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
           <span class="carousel-control-prev-icon"></span>
@@ -23,10 +25,11 @@
         </button>
       </div>
     </div>
+
     <div class="col-md-6">
       <h1>{{product.title}}</h1>
       <p class="text-muted">{{product.category}}</p>
-      <h3 class="text-success my-4">${{product.price}}</h3>
+      <h3 class="text-success my-4">${{formatPrice product.price}}</h3>
       
       <div class="mb-4">
         <span class="badge bg-{{#if (gt product.stock 0)}}success{{else}}danger{{/if}}">
@@ -37,12 +40,12 @@
           {{/if}}
         </span>
       </div>
-      
+
       <p>{{product.description}}</p>
-      
+
       <div class="d-flex gap-2 mt-4">
-        <button onclick="addToCart('{{product._id}}')" class="btn btn-primary btn-lg" {{#unless (gt product.stock 0)}}disabled{{/unless}}>
-          Agregar al carrito
+        <button onclick="addToCart('{{product._id}}', '{{cartId}}')" class="btn btn-primary btn-lg" {{#unless (gt product.stock 0)}}disabled{{/unless}}>
+          <i class="fas fa-cart-plus me-1"></i> Agregar al carrito
         </button>
         <a href="/" class="btn btn-outline-secondary btn-lg">Volver</a>
       </div>
@@ -51,25 +54,27 @@
 </div>
 
 <script>
-  function addToCart(productId) {
-    fetch('/api/carts/{{cartId}}/products/' + productId, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+  async function addToCart(productId, cartId) {
+    try {
+      const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Error al agregar al carrito');
       }
-    })
-    .then(response => {
-      if (response.ok) {
-        alert('Producto agregado al carrito');
-      } else {
-        response.json().then(data => {
-          alert('Error: ' + data.message);
-        });
+
+      const counter = document.getElementById('cart-counter');
+      if (counter) {
+        counter.textContent = parseInt(counter.textContent) + 1;
       }
-    })
-    .catch(error => {
+
+      alert('Producto agregado al carrito');
+    } catch (error) {
       console.error('Error:', error);
-      alert('Error al agregar al carrito');
-    });
+      alert(error.message);
+    }
   }
 </script>

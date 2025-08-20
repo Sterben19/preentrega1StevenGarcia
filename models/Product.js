@@ -27,7 +27,8 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'El precio es requerido'],
     min: [0, 'El precio no puede ser negativo'],
-    get: (value) => Math.round(value * 100) / 100 // Redondear a 2 decimales
+    max: [1000000, 'El precio no puede superar 1,000,000'],
+    get: (value) => Math.round(value * 100) / 100
   },
   status: {
     type: Boolean,
@@ -37,6 +38,7 @@ const productSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'El stock es requerido'],
     min: [0, 'El stock no puede ser negativo'],
+    max: [10000, 'El stock no puede ser mayor a 10,000'],
     validate: {
       validator: Number.isInteger,
       message: 'El stock debe ser un número entero'
@@ -53,7 +55,7 @@ const productSchema = new mongoose.Schema({
   },
   thumbnails: {
     type: [String],
-    default: [],
+    default: ['/img/default-product.png'], 
     validate: {
       validator: (array) => array.length <= 5,
       message: 'No se pueden subir más de 5 imágenes'
@@ -66,11 +68,12 @@ const productSchema = new mongoose.Schema({
   toObject: { getters: true }
 });
 
-
 productSchema.index({ title: 'text', description: 'text' });
 productSchema.index({ price: 1 });
 productSchema.index({ stock: 1 });
 
 productSchema.plugin(mongoosePaginate);
 
-export default mongoose.model('Product', productSchema);
+const Product = mongoose.model('Product', productSchema);
+
+export default Product;

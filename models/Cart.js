@@ -1,45 +1,38 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const cartSchema = new mongoose.Schema({
-  products: [{
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true,
-      validate: {
-        validator: async function(productId) {
-          const product = await mongoose.model('Product').findById(productId);
-          return !!product;
-        },
-        message: 'El producto no existe'
-      }
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: [1, 'La cantidad mínima es 1'],
-      validate: {
-        validator: Number.isInteger,
-        message: 'La cantidad debe ser un número entero'
+  products: [
+    {
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true
+      },
+      quantity: {
+        type: Number,
+        required: true,
+        default: 1
       }
     }
-  }]
-}, {
-  timestamps: true,
-  versionKey: false,
-  toJSON: { virtuals: true }
+  ],
+  isDefault: {
+    type: Boolean,
+    default: false
+  }
 });
 
-cartSchema.virtual('total').get(function() {
-  return this.products.reduce((total, item) => {
-    return total + (item.product?.price || 0) * item.quantity;
+cartSchema.virtual("total").get(function () {
+  return this.products.reduce((acc, item) => {
+    if (item.product && item.product.price) {
+      return acc + item.product.price * item.quantity;
+    }
+    return acc;
   }, 0);
 });
 
+cartSchema.set("toObject", { virtuals: true });
+cartSchema.set("toJSON", { virtuals: true });
 
-cartSchema.pre(/^find/, function(next) {
-  this.populate('products.product');
-  next();
-});
+const Cart = mongoose.model("Cart", cartSchema);
 
-export default mongoose.model('Cart', cartSchema);
+export default Cart;

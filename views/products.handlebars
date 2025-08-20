@@ -1,15 +1,6 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Nuestros Productos</h1>
-    <div>
-      <a href="/carts/{{cartId}}" class="btn btn-primary position-relative">
-        <i class="fas fa-shopping-cart me-1"></i>
-        Carrito
-        <span id="cart-counter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-          0
-        </span>
-      </a>
-    </div>
   </div>
 
   <div class="card mb-4 shadow-sm">
@@ -17,16 +8,14 @@
       <form id="filter-form" class="row g-3">
         <div class="col-md-5">
           <input type="text" name="query" class="form-control" 
-                 placeholder="Buscar por nombre, categoría o descripción..." 
-                 value="{{currentQuery}}">
+                placeholder="Buscar por nombre, categoría o descripción..." 
+                value="{{currentQuery}}">
         </div>
         <div class="col-md-3">
           <select name="category" class="form-select">
             <option value="">Todas las categorías</option>
             {{#each categories}}
-              <option value="{{this}}" {{#if (eq this ../currentCategory)}}selected{{/if}}>
-                {{this}}
-              </option>
+              <option value="{{this}}" {{#if (eq this ../currentCategory)}}selected{{/if}}>{{this}}</option>
             {{/each}}
           </select>
         </div>
@@ -52,13 +41,23 @@
         <div class="col">
           <div class="card h-100 shadow-sm product-card">
             <div class="position-relative">
-              {{#if thumbnails.[0]}}
-                <img src="{{thumbnails.[0]}}" class="card-img-top product-img" alt="{{title}}">
-              {{else}}
-                <div class="card-img-top product-img-placeholder d-flex align-items-center justify-content-center">
-                  <i class="fas fa-box-open fa-3x text-muted"></i>
+              <div id="carousel-{{_id}}" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                  {{#each thumbnails}}
+                    <div class="carousel-item {{#if @first}}active{{/if}}">
+                      <img src="{{this}}" class="card-img-top product-img" 
+                          alt="{{../title}}" style="height: 200px; object-fit: contain;">
+                    </div>
+                  {{/each}}
                 </div>
-              {{/if}}
+                <button class="carousel-control-prev" type="button" data-bs-target="#carousel-{{_id}}" data-bs-slide="prev">
+                  <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carousel-{{_id}}" data-bs-slide="next">
+                  <span class="carousel-control-next-icon"></span>
+                </button>
+              </div>
+
               <div class="position-absolute top-0 end-0 m-2">
                 <span class="badge bg-{{#if (gt stock 0)}}success{{else}}danger{{/if}}">
                   {{#if (gt stock 0)}}
@@ -69,7 +68,7 @@
                 </span>
               </div>
             </div>
-            
+
             <div class="card-body">
               <h5 class="card-title">{{title}}</h5>
               <div class="mb-2">
@@ -78,14 +77,13 @@
               <p class="card-text text-truncate-3">{{description}}</p>
               <h5 class="text-primary">${{formatPrice price}}</h5>
             </div>
-            
+
             <div class="card-footer bg-white d-flex gap-2">
               <a href="/products/{{_id}}" class="btn btn-outline-primary flex-grow-1">
                 <i class="fas fa-eye me-1"></i> Detalles
               </a>
               <button class="btn btn-success flex-grow-1 add-to-cart-btn" 
-                      data-product-id="{{_id}}"
-                      {{#unless stock}}disabled{{/unless}}>
+                      data-product-id="{{_id}}" {{#unless stock}}disabled{{/unless}}>
                 <i class="fas fa-cart-plus me-1"></i> Agregar
               </button>
             </div>
@@ -102,15 +100,12 @@
               <span aria-hidden="true">&laquo;</span>
             </a>
           </li>
-          
+
           {{#each (range 1 totalPages)}}
-            <li class="page-item {{#if (eq this ../page)}}active{{/if}}">
-              <a class="page-link" href="/products?page={{this}}&limit={{../limit}}&sort={{../sort}}&query={{../query}}">
-                {{this}}
-              </a>
+            <li class="page-item {{#eq this ../page}}active{{/eq}}">
+              <a class="page-link" href="/products?page={{this}}&limit={{../limit}}&sort={{../sort}}&query={{../query}}">{{this}}</a>
             </li>
           {{/each}}
-
           <li class="page-item {{#unless hasNextPage}}disabled{{/unless}}">
             <a class="page-link" href="{{nextLink}}" aria-label="Siguiente">
               <span aria-hidden="true">&raquo;</span>
@@ -132,35 +127,11 @@
 </div>
 
 <script>
-
-  document.addEventListener('DOMContentLoaded', async () => {
-    const cartId = '{{cartId}}';
-    if (cartId) {
-      try {
-        const response = await fetch(`/api/carts/${cartId}`);
-        if (response.ok) {
-          const cart = await response.json();
-          const counter = document.getElementById('cart-counter');
-          if (counter) {
-            const totalItems = cart.payload.products.reduce((sum, item) => sum + item.quantity, 0);
-            counter.textContent = totalItems;
-          }
-        }
-      } catch (error) {
-        console.error('Error al cargar carrito:', error);
-      }
-    }
-  });
-
-  document.getElementById('filter-form')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const params = new URLSearchParams();
-    
-    formData.forEach((value, key) => {
-      if (value) params.append(key, value);
-    });
-    
-    window.location.href = `/products?${params.toString()}`;
-  });
+document.getElementById('filter-form')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const params = new URLSearchParams();
+  formData.forEach((value, key) => { if (value) params.append(key, value); });
+  window.location.href = `/products?${params.toString()}`;
+});
 </script>
